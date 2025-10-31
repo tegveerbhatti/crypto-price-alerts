@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package cryptoalert;
+
+option go_package = "crypto-price-alerts/api/gen";
+
+import "google/protobuf/timestamp.proto";
+
+// CryptoMarketData service for streaming cryptocurrency price data
+service CryptoMarketData {
+  // Subscribe to price updates for specified crypto symbols
+  rpc SubscribePrices(PriceSubscriptionRequest) returns (stream PriceTick);
+}
+
+// CryptoAlertService for managing and streaming cryptocurrency price alerts
+service CryptoAlertService {
+  // Create a new crypto price alert
+  rpc CreateAlert(CreateAlertRequest) returns (CreateAlertResponse);
+  
+  // Get all alerts for a user
+  rpc GetAlerts(GetAlertsRequest) returns (GetAlertsResponse);
+  
+  // Update an existing alert
+  rpc UpdateAlert(UpdateAlertRequest) returns (UpdateAlertResponse);
+  
+  // Delete an alert
+  rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
+  
+  // Subscribe to alert triggers
+  rpc SubscribeAlerts(AlertSubscriptionRequest) returns (stream AlertTrigger);
+}
+
+// Price subscription request
+message PriceSubscriptionRequest {
+  repeated string symbols = 1; // Crypto symbols to subscribe to (e.g., ["BTC", "ETH", "ADA"])
+}
+
+// Real-time price tick
+message PriceTick {
+  string symbol = 1;
+  double price = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// Alert comparator types
+enum Comparator {
+  COMPARATOR_UNSPECIFIED = 0;
+  COMPARATOR_GT = 1;   // Greater than
+  COMPARATOR_GTE = 2;  // Greater than or equal
+  COMPARATOR_LT = 3;   // Less than
+  COMPARATOR_LTE = 4;  // Less than or equal
+  COMPARATOR_EQ = 5;   // Equal
+}
+
+// Alert definition
+message Alert {
+  string id = 1;
+  string symbol = 2;
+  Comparator comparator = 3;
+  double threshold = 4;
+  string note = 5;
+  bool enabled = 6;
+  google.protobuf.Timestamp last_trigger = 7;
+}
+
+// Create alert request
+message CreateAlertRequest {
+  string symbol = 1;
+  Comparator comparator = 2;
+  double threshold = 3;
+  string note = 4;
+}
+
+// Create alert response
+message CreateAlertResponse {
+  Alert alert = 1;
+}
+
+// Get alerts request
+message GetAlertsRequest {
+  // Empty for now - could add filtering in the future
+}
+
+// Get alerts response
+message GetAlertsResponse {
+  repeated Alert alerts = 1;
+}
+
+// Update alert request
+message UpdateAlertRequest {
+  string id = 1;
+  optional string symbol = 2;
+  optional Comparator comparator = 3;
+  optional double threshold = 4;
+  optional string note = 5;
+  optional bool enabled = 6;
+}
+
+// Update alert response
+message UpdateAlertResponse {
+  Alert alert = 1;
+}
+
+// Delete alert request
+message DeleteAlertRequest {
+  string id = 1;
+}
+
+// Delete alert response
+message DeleteAlertResponse {
+  bool success = 1;
+}
+
+// Alert subscription request
+message AlertSubscriptionRequest {
+  // Empty for now - could add filtering in the future
+}
+
+// Alert trigger notification
+message AlertTrigger {
+  Alert alert = 1;
+  double triggered_price = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
