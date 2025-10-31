@@ -144,7 +144,7 @@ Found 2 alert(s):
    Note: Test alert - won't trigger yet
 ```
 
-## 🔧 Development
+## Development
 
 ### Available Make Commands
 
@@ -209,7 +209,7 @@ cd deploy
 docker-compose up -d
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Run All Tests
 
@@ -237,7 +237,7 @@ make test-race
 - **Memory**: Efficient channel-based messaging with bounded buffers
 - **Backpressure**: Automatic handling of slow consumers
 
-## 🔧 Configuration
+## Configuration
 
 ### Server Configuration
 
