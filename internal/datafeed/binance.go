@@ -25,10 +25,11 @@ type BinanceDataFeed struct {
 }
 
 // BinanceTickerMessage represents Binance WebSocket 24hr ticker message
-// Only parsing the fields we need - being very explicit about lowercase 'c'
+// Being very explicit about field mapping to avoid Go's JSON ambiguity
 type BinanceTickerMessage struct {
-	Symbol string `json:"s"`  // Symbol (e.g., "BTCUSDT")
-	Price  string `json:"c"`  // Current close price - MUST be lowercase 'c'!
+	Symbol        string          `json:"s"`  // Symbol (e.g., "BTCUSDT")
+	PriceRaw      json.RawMessage `json:"c"`  // Current close price (lowercase c!)
+	CloseTime     int64           `json:"C"`  // Close time (uppercase C) - explicitly mapped to avoid confusion
 }
 
 // NewBinanceDataFeed creates a new Binance WebSocket data feed
@@ -123,18 +124,30 @@ func (b *BinanceDataFeed) readMessages(ctx context.Context) {
 
 // processTicker converts Binance ticker to internal tick format
 func (b *BinanceDataFeed) processTicker(msg BinanceTickerMessage) {
-	// Parse price string to float64 - should now get the REAL price!
-	price, err := strconv.ParseFloat(msg.Price, 64)
-	if err != nil {
-		log.Printf("❌ Error parsing price %s: %v", msg.Price, err)
-		return
+	// Handle Binance's inconsistent price format (string OR number)
+	var price float64
+	var err error
+	
+	// Try parsing as number first
+	if err = json.Unmarshal(msg.PriceRaw, &price); err != nil {
+		// If that fails, try parsing as string
+		var priceStr string
+		if err = json.Unmarshal(msg.PriceRaw, &priceStr); err != nil {
+			log.Printf("❌ Error parsing price from JSON: %v", err)
+			return
+		}
+		price, err = strconv.ParseFloat(priceStr, 64)
+		if err != nil {
+			log.Printf("❌ Error converting price string %s to float: %v", priceStr, err)
+			return
+		}
 	}
 	
 	// Convert symbol (BTCUSDT -> BTC)
 	symbol := strings.TrimSuffix(msg.Symbol, "USDT")
 	
 	// Log real-time price updates - should now show ~$109,284 for BTC!
-	log.Printf("🚀 REAL BTC PRICE: %s = $%.2f", symbol, price)
+	log.Printf("🚀 LIVE: %s = $%.2f", symbol, price)
 
 	// Create tick
 	tick := models.NewTick(symbol, price)
