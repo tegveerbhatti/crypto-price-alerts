@@ -21,20 +21,18 @@ const serverAddr = "127.0.0.1:9090"
 func main() {
 	fmt.Printf("Attempting to connect to server at %s...\n", serverAddr)
 	
-	// Connect to the gRPC server with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
 	conn, err := grpc.DialContext(ctx, serverAddr, 
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(), // Wait for connection to be established
+		grpc.WithBlock(),
 	)
 	if err != nil {
 		log.Fatalf("Failed to connect to server at %s: %v\nMake sure the server is running with 'make run-server'", serverAddr, err)
 	}
 	defer conn.Close()
 
-	// Create clients
 	cryptoMarketDataClient := pb.NewCryptoMarketDataClient(conn)
 	cryptoAlertServiceClient := pb.NewCryptoAlertServiceClient(conn)
 
@@ -42,7 +40,6 @@ func main() {
 	fmt.Println("Connected to server at", serverAddr)
 	fmt.Println()
 
-	// Start interactive CLI
 	scanner := bufio.NewScanner(os.Stdin)
 	
 	for {
@@ -93,7 +90,6 @@ func main() {
 			watchAlerts(cryptoAlertServiceClient)
 
 		case "6", "help":
-			// Help is shown at the top of the loop
 			continue
 
 		case "7", "quit", "exit":
@@ -124,7 +120,6 @@ func watchPrices(client pb.CryptoMarketDataClient, symbols []string) {
 		return
 	}
 
-	// Listen for price updates
 	for {
 		tick, err := stream.Recv()
 		if err != nil {
@@ -140,14 +135,12 @@ func watchPrices(client pb.CryptoMarketDataClient, symbols []string) {
 func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
 		fmt.Println("Creating a new alert")
 
-	// Get symbol
 	fmt.Print("Enter symbol (e.g., BTC): ")
 	if !scanner.Scan() {
 		return
 	}
 	symbol := strings.TrimSpace(strings.ToUpper(scanner.Text()))
 
-	// Get comparator
 	fmt.Println("Select comparator:")
 	fmt.Println("1. > (greater than)")
 	fmt.Println("2. >= (greater than or equal)")
@@ -177,7 +170,6 @@ func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
 		return
 	}
 
-	// Get threshold
 	fmt.Print("Enter threshold price: $")
 	if !scanner.Scan() {
 		return
@@ -189,14 +181,12 @@ func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
 		return
 	}
 
-	// Get note (optional)
 	fmt.Print("Enter note (optional): ")
 	if !scanner.Scan() {
 		return
 	}
 	note := strings.TrimSpace(scanner.Text())
 
-	// Create the alert
 	req := &pb.CreateAlertRequest{
 		Symbol:     symbol,
 		Comparator: comparator,
@@ -289,7 +279,6 @@ func watchAlerts(client pb.CryptoAlertServiceClient) {
 		return
 	}
 
-	// Listen for alert triggers
 	for {
 		trigger, err := stream.Recv()
 		if err != nil {
