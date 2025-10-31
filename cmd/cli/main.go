@@ -38,7 +38,7 @@ func main() {
 	cryptoMarketDataClient := pb.NewCryptoMarketDataClient(conn)
 	cryptoAlertServiceClient := pb.NewCryptoAlertServiceClient(conn)
 
-	fmt.Println("🚀 Crypto Price Alert CLI")
+	fmt.Println("Crypto Price Alert CLI")
 	fmt.Println("Connected to server at", serverAddr)
 	fmt.Println()
 
@@ -138,7 +138,7 @@ func watchPrices(client pb.CryptoMarketDataClient, symbols []string) {
 }
 
 func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
-	fmt.Println("📢 Creating a new alert")
+		fmt.Println("Creating a new alert")
 
 	// Get symbol
 	fmt.Print("Enter symbol (e.g., BTC): ")
@@ -210,7 +210,7 @@ func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
 		return
 	}
 
-	fmt.Printf("✅ Alert created successfully!\n")
+		fmt.Printf("Alert created successfully!\n")
 	fmt.Printf("ID: %s\n", resp.Alert.Id)
 	fmt.Printf("Rule: %s %s $%.2f\n", resp.Alert.Symbol, 
 		comparatorToString(resp.Alert.Comparator), resp.Alert.Threshold)
@@ -220,7 +220,7 @@ func createAlert(client pb.CryptoAlertServiceClient, scanner *bufio.Scanner) {
 }
 
 func listAlerts(client pb.CryptoAlertServiceClient) {
-	fmt.Println("📋 Listing all alerts")
+	fmt.Println("Listing all alerts")
 
 	resp, err := client.GetAlerts(context.Background(), &pb.GetAlertsRequest{})
 	if err != nil {
@@ -236,9 +236,9 @@ func listAlerts(client pb.CryptoAlertServiceClient) {
 	fmt.Printf("Found %d alert(s):\n\n", len(resp.Alerts))
 	
 	for i, alert := range resp.Alerts {
-		status := "✅ Enabled"
+		status := "Enabled"
 		if !alert.Enabled {
-			status = "❌ Disabled"
+			status = "Disabled"
 		}
 
 		fmt.Printf("%d. %s\n", i+1, status)
@@ -272,11 +272,11 @@ func deleteAlert(client pb.CryptoAlertServiceClient, alertID string) {
 		return
 	}
 
-	fmt.Println("✅ Alert deleted successfully!")
+	fmt.Println("Alert deleted successfully!")
 }
 
 func watchAlerts(client pb.CryptoAlertServiceClient) {
-	fmt.Println("🔔 Watching for alert triggers (Press Ctrl+C to stop)")
+	fmt.Println("Watching for alert triggers (Press Ctrl+C to stop)")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

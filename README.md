@@ -1,20 +1,20 @@
 # Crypto Price Alert Engine
 
-A high-performance, real-time cryptocurrency price alert system built with Go and gRPC. This system demonstrates streaming architecture, pub/sub messaging, and clean modular design.
+A high-performance, real-time cryptocurrency price alert system built with Go and gRPC. Features live Binance WebSocket integration, flexible alert rules, and clean terminal interface. This system demonstrates streaming architecture, pub/sub messaging, and production-ready modular design.
 
-## 🚀 Features
+## Features
 
+- **Live Binance Integration**: Real-time crypto prices from Binance WebSocket API (~$109K BTC, ~$3.8K ETH)
 - **Real-time Price Streaming**: Subscribe to live cryptocurrency price updates via gRPC streams
-- **Flexible Alert Rules**: Create alerts with various comparators (>, >=, <, <=, ==)
+- **Smart Alert System**: Create alerts with various comparators (>, >=, <, <=, ==) that trigger on real price movements
 - **High-Performance Architecture**: Channel-based pub/sub with backpressure handling
-- **Mock Data Feed**: Simulated crypto prices using random walk algorithm with higher volatility
-- **Binance Integration**: Real-time crypto prices from Binance WebSocket API
-- **Interactive CLI**: Easy-to-use command-line interface for testing
+- **Mock Data Feed**: Simulated crypto prices for testing (when Binance is unavailable)
+- **Interactive CLI**: Easy-to-use command-line interface for managing alerts and watching prices
 - **Thread-Safe Operations**: Concurrent-safe alert storage and processing
 - **Cooldown Management**: Prevents alert spam with configurable cooldown periods
 - **Docker Support**: Containerized deployment with health checks
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────┐    gRPC     ┌─────────────────┐
@@ -29,11 +29,12 @@ A high-performance, real-time cryptocurrency price alert system built with Go an
           │                               │
           ▼                               ▼
 ┌─────────────────┐             ┌─────────────────┐
-│ Mock Data Feed  │             │  Alert Store    │
+│ Binance WebSocket│             │  Alert Store    │
+│  (Live Prices)  │             │                 │
 └─────────────────┘             └─────────────────┘
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Go 1.22 or higher
 - Protocol Buffers compiler (`protoc`)
@@ -44,8 +45,8 @@ A high-performance, real-time cryptocurrency price alert system built with Go an
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
-cd stock-price-alerts
+git clone https://github.com/tegveerbhatti/crypto-price-alerts.git
+cd crypto-price-alerts
 make setup  # Downloads deps, installs tools, generates protobuf code
 ```
 
@@ -55,8 +56,15 @@ make setup  # Downloads deps, installs tools, generates protobuf code
 make run-server
 ```
 
-The server will start on `localhost:9090` and begin generating mock price data for:
-- BTC, ETH, ADA, SOL, DOT, MATIC, AVAX, LINK
+The server will start on `localhost:9090` and connect to Binance WebSocket for live prices:
+- BTC (~$109,000), ETH (~$3,800), ADA (~$0.60), SOL (~$185), DOT (~$2.85), MATIC, AVAX (~$18), LINK (~$17)
+
+You'll see clean logs like:
+```
+LIVE: BTC = $109025.14
+LIVE: ETH = $3812.29
+Alert triggered: BTC > 109000.00 (triggered at 109025.14)
+```
 
 ### 3. Run the CLI Client
 
@@ -66,7 +74,7 @@ In a new terminal:
 make run-cli
 ```
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### Watch Real-time Prices
 
@@ -81,8 +89,28 @@ watch BTC,ETH,ADA
 # In the CLI, enter:
 create-alert
 # Follow the prompts to set up alerts like:
-# - BTC > $45000.00
-# - ETH <= $2500.00
+# - BTC > $109000.00 (will trigger immediately with current prices!)
+# - ETH <= $3800.00
+# - SOL >= $200.00
+```
+
+Example alert creation:
+```
+Creating a new alert
+Enter symbol (e.g., BTC): BTC
+Select comparator:
+1. > (greater than)
+2. >= (greater than or equal)
+3. < (less than)
+4. <= (less than or equal)
+5. == (equal)
+Enter choice (1-5): 1
+Enter threshold price: $109000
+Enter note (optional): BTC above 109k
+Alert created successfully!
+ID: c5709cbd-7582-4158-8044-75ceecd3401c
+Rule: BTC > $109000.00
+Note: BTC above 109k
 ```
 
 ### Monitor Alert Triggers
@@ -90,6 +118,30 @@ create-alert
 ```bash
 # In the CLI, enter:
 watch-alerts
+```
+
+### List All Alerts
+
+```bash
+# In the CLI, enter:
+list-alerts
+```
+
+Example output:
+```
+Listing all alerts
+Found 2 alert(s):
+
+1. Enabled
+   ID: c5709cbd-7582-4158-8044-75ceecd3401c
+   Rule: BTC > $109000.00
+   Note: BTC above 109k
+   Last triggered: 2025-10-31 18:34:27
+
+2. Enabled
+   ID: 67c5cec3-0350-48fd-9f07-89229da75bd1
+   Rule: BTC > $120000.00
+   Note: Test alert - won't trigger yet
 ```
 
 ## 🔧 Development
@@ -122,6 +174,7 @@ crypto-price-alerts/
 │   │   ├── store.go           # Thread-safe alert storage
 │   │   └── trigger_bus.go     # Alert trigger pub/sub
 │   ├── datafeed/
+│   │   ├── binance.go         # Live Binance WebSocket integration
 │   │   └── mock.go            # Mock price data generator
 │   ├── grpc/
 │   │   ├── alertservice.go    # Alert gRPC service
@@ -140,7 +193,7 @@ crypto-price-alerts/
 └── README.md                  # This file
 ```
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Build and Run with Docker
 
@@ -176,7 +229,7 @@ make test-race
 2. Start the CLI: `make run-cli`
 3. Create some alerts and watch price streams
 
-## 📊 Performance Characteristics
+## Performance Characteristics
 
 - **Latency**: <150ms for local operations
 - **Throughput**: Handles thousands of price ticks per second
@@ -190,24 +243,26 @@ make test-race
 
 The server uses these default settings:
 
-- **Port**: 8080
-- **Tick Rate**: 200ms (configurable in `cmd/server/main.go`)
+- **Port**: 9090
+- **Data Source**: Live Binance WebSocket (real-time)
 - **Alert Cooldown**: 30 seconds
 - **Buffer Sizes**: 1000 for price ticks, 100 for alert triggers
 
 ### Supported Crypto Symbols
 
-Default symbols with realistic starting prices:
-- BTC: $43,000.00
-- ETH: $2,600.00
-- ADA: $0.45
-- SOL: $95.00
-- DOT: $6.50
-- MATIC: $0.85
-- AVAX: $36.00
-- LINK: $14.50
+Live prices from Binance (as of October 2025):
+- **BTC**: ~$109,000 (Bitcoin)
+- **ETH**: ~$3,800 (Ethereum)
+- **ADA**: ~$0.60 (Cardano)
+- **SOL**: ~$185 (Solana)
+- **DOT**: ~$2.85 (Polkadot)
+- **MATIC**: ~$0.40 (Polygon)
+- **AVAX**: ~$18 (Avalanche)
+- **LINK**: ~$17 (Chainlink)
 
-## 🚦 API Reference
+*Note: Prices update in real-time via Binance WebSocket. Mock data is available as fallback.*
+
+## API Reference
 
 ### gRPC Services
 
@@ -229,50 +284,4 @@ service CryptoAlertService {
   rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
   rpc SubscribeAlerts(AlertSubscriptionRequest) returns (stream AlertTrigger);
 }
-```
-
-### Alert Comparators
-
-- `COMPARATOR_GT`: Greater than (>)
-- `COMPARATOR_GTE`: Greater than or equal (>=)
-- `COMPARATOR_LT`: Less than (<)
-- `COMPARATOR_LTE`: Less than or equal (<=)
-- `COMPARATOR_EQ`: Equal (==)
-
-## 🔮 Future Enhancements
-
-### Phase 2
-- [ ] SQLite persistence
-- [ ] REST API gateway
-- [ ] Web dashboard
-- [ ] Historical price replay
-
-### Phase 3
-- [ ] Redis/NATS pub/sub
-- [ ] Distributed alert engine
-- [ ] Real crypto data integration (Binance, Coinbase)
-- [ ] ML-based trading signals
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run `make check` to ensure quality
-6. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙋‍♂️ Support
-
-For questions or issues:
-1. Check the existing issues on GitHub
-2. Create a new issue with detailed information
-3. Include logs and steps to reproduce
-
----
-
-**Built with ❤️ using Go, gRPC, and Protocol Buffers**
+```  
