@@ -146,8 +146,8 @@ func (b *BinanceDataFeed) processTicker(msg BinanceTickerMessage) {
 	// Convert symbol (BTCUSDT -> BTC)
 	symbol := strings.TrimSuffix(msg.Symbol, "USDT")
 	
-	// Log real-time price updates - should now show ~$109,284 for BTC!
-	log.Printf("🚀 LIVE: %s = $%.2f", symbol, price)
+	// Log real-time price updates
+	log.Printf("LIVE: %s = $%.2f", symbol, price)
 
 	// Create tick
 	tick := models.NewTick(symbol, price)
